@@ -1,2 +1,6 @@
 .idea
 __pycache__
+
+build
+dist
+flagsense_sdk.egg-info

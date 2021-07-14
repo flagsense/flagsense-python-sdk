@@ -162,6 +162,8 @@ class UserVariantService:
 	def _matches_version_rule(self, rule, attributeValue):
 		values = rule['values']
 		operator = rule['operator']
+		if type(version.parse(attributeValue)) != type(version.parse(values[0])):
+			attributeValue = '0.0'
 		
 		if operator == 'LT':
 			return version.parse(attributeValue) < version.parse(values[0])
@@ -174,7 +176,10 @@ class UserVariantService:
 		elif operator == 'GTE':
 			return version.parse(attributeValue) >= version.parse(values[0])
 		elif operator == 'IOF':
-			return attributeValue in values
+			for value in values:
+				if version.parse(attributeValue) == version.parse(value):
+					return True
+				return False
 		
 		return False
 	

@@ -1,4 +1,8 @@
+import requests
 import time
+
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 
 
 class Utility:
@@ -23,3 +27,21 @@ class Utility:
 		if obj and key in obj:
 			return obj[key]
 		return defaultValue
+	
+	@staticmethod
+	def requests_retry_session(
+			retries=5,
+			backoff_factor=2,
+			session=None
+	):
+		session = session or requests.Session()
+		retry = Retry(
+			total=retries,
+			read=retries,
+			connect=retries,
+			backoff_factor=backoff_factor,
+			status_forcelist=[205, 408, 422, 429, 500, 501, 502, 503, 504]
+		)
+		adapter = HTTPAdapter(max_retries=retry)
+		session.mount('https://', adapter)
+		return session

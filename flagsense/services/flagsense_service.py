@@ -1,4 +1,3 @@
-import requests
 import threading
 import time
 
@@ -88,11 +87,11 @@ class FlagsenseService:
 		}
 		
 		try:
-			response = requests.post(
+			response = Utility.requests_retry_session().post(
 				Constants.BASE_URL + 'fetchLatest',
 				headers=self._headers,
 				json=body,
-				timeout=10
+				timeout=30
 			)
 		except Exception as err:
 			# print(err)

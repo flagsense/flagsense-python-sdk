@@ -1,12 +1,12 @@
 import atexit
 import copy
 import math
-import requests
 import threading
 import time
 import uuid
 
 from flagsense.util.constants import Constants
+from flagsense.util.utility import Utility
 
 
 class EventService:
@@ -124,21 +124,17 @@ class EventService:
 			if timeKey in self._requestBodyMap:
 				requestBody = self._requestBodyMap[timeKey]
 				if requestBody:
-					self._send_event(timeKey, requestBody)
+					self._send_event(requestBody)
+				del self._requestBodyMap[timeKey]
 	
-	def _send_event(self, timeKey, requestBody):
+	def _send_event(self, requestBody):
 		try:
-			response = requests.post(
+			Utility.requests_retry_session().post(
 				Constants.EVENTS_BASE_URL + 'variantsData',
 				headers=self._headers,
 				json=requestBody,
-				timeout=10
+				timeout=30
 			)
 		except Exception as err:
 			# print(err)
 			return
-		
-		if not response or response.status_code != 200:
-			return
-		
-		del self._requestBodyMap[timeKey]

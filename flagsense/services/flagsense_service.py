@@ -91,7 +91,7 @@ class FlagsenseService:
 				Constants.BASE_URL + 'fetchLatest',
 				headers=self._headers,
 				json=body,
-				timeout=30
+				timeout=10
 			)
 		except Exception as err:
 			# print(err)

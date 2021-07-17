@@ -133,7 +133,7 @@ class EventService:
 				Constants.EVENTS_BASE_URL + 'variantsData',
 				headers=self._headers,
 				json=requestBody,
-				timeout=30
+				timeout=10
 			)
 		except Exception as err:
 			# print(err)

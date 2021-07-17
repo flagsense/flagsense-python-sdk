@@ -179,7 +179,7 @@ class UserVariantService:
 			for value in values:
 				if version.parse(attributeValue) == version.parse(value):
 					return True
-				return False
+			return False
 		
 		return False
 	

@@ -106,13 +106,12 @@ class UserVariantService:
 			return False
 	
 	def _get_attribute_value(self, userId, attributes, key):
+		attributesContainsKey = attributes and key in attributes
+		if attributesContainsKey:
+			return attributes[key]
 		if key == 'id':
 			return userId
-		
-		if not attributes or key not in attributes:
-			return None
-		
-		return attributes[key]
+		return None
 	
 	def _matches_number_rule(self, rule, attributeValue):
 		values = rule['values']

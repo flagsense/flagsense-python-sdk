@@ -12,6 +12,7 @@ from flagsense.util.utility import Utility
 class EventService:
 	def __init__(self, headers, environment):
 		self._data = {}
+		self._codeBugs = {}
 		self._errors = {}
 		self._requestBodyMap = {}
 		self._timeSlot = self._get_time_slot(time.time())
@@ -22,6 +23,7 @@ class EventService:
 			'sdkType': 'python',
 			'environment': environment,
 			'data': None,
+			'codeBugs': None,
 			'errors': None,
 			'time': self._timeSlot
 		}
@@ -37,7 +39,7 @@ class EventService:
 			
 			currentTimeSlot = self._get_time_slot(time.time())
 			if currentTimeSlot != self._timeSlot:
-				self._refresh_data(currentTimeSlot)
+				self._check_and_refresh_data(currentTimeSlot)
 			
 			if flagId in self._data:
 				if variantKey in self._data[flagId]:
@@ -59,12 +61,34 @@ class EventService:
 			
 			currentTimeSlot = self._get_time_slot(time.time())
 			if currentTimeSlot != self._timeSlot:
-				self._refresh_data(currentTimeSlot)
+				self._check_and_refresh_data(currentTimeSlot)
 			
 			if flagId in self._data:
 				self._data[flagId] = self._data[flagId] + 1
 			else:
 				self._data[flagId] = 1
+		except Exception as err:
+			# print(err)
+			pass
+	
+	def add_code_bugs_count(self, flagId, variantKey):
+		try:
+			if not Constants.CAPTURE_EVENTS_FLAG:
+				return
+			
+			currentTimeSlot = self._get_time_slot(time.time())
+			if currentTimeSlot != self._timeSlot:
+				self._check_and_refresh_data(currentTimeSlot)
+			
+			if flagId in self._codeBugs:
+				if variantKey in self._codeBugs[flagId]:
+					self._codeBugs[flagId][variantKey] = self._codeBugs[flagId][variantKey] + 1
+				else:
+					self._codeBugs[flagId][variantKey] = 1
+			else:
+				self._codeBugs[flagId] = {
+					variantKey: 1
+				}
 		except Exception as err:
 			# print(err)
 			pass
@@ -84,12 +108,14 @@ class EventService:
 	def _refresh_data(self, currentTimeSlot):
 		self._body['time'] = currentTimeSlot
 		self._body['data'] = self._data
+		self._body['codeBugs'] = self._codeBugs
 		self._body['errors'] = self._errors
 		
 		self._requestBodyMap[currentTimeSlot] = copy.deepcopy(self._body)
 		
 		self._timeSlot = currentTimeSlot
 		self._data = {}
+		self._codeBugs = {}
 		self._errors = {}
 	
 	def _start_event_sender(self):

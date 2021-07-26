@@ -47,6 +47,10 @@ class FlagsenseService:
 		})
 		return FSVariation(variant['key'], variant['value'])
 	
+	def record_code_error(self, flag_id, variation_key):
+		if flag_id and variation_key:
+			self._event_service.add_code_bugs_count(flag_id, variation_key)
+	
 	def _get_variant(self, flagId, userId, attributes, defaultVariant):
 		try:
 			if self._lastUpdatedOn == 0:

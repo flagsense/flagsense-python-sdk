@@ -27,7 +27,8 @@ class FlagsenseService:
 		
 		self._data = {
 			'segments': None,
-			'flags': None
+			'flags': None,
+			'experiments': None
 		}
 		
 		self._event_service = EventService(self._headers, self._environment)
@@ -46,10 +47,21 @@ class FlagsenseService:
 			'value': fs_flag.default_value
 		})
 		return FSVariation(variant['key'], variant['value'])
+
+	def record_event(self, fs_user, experiment_id, event_name, value=1):
+		if not experiment_id or not event_name or self._lastUpdatedOn == 0 or experiment_id not in self._data['experiments']:
+			return
+		experiment = self._data['experiments'][experiment_id]
+		if event_name not in experiment['eventNames']:
+			return
+		variant_key = self._get_variant_key(experiment['flagId'], fs_user.user_id, fs_user.attributes)
+		if variant_key == '':
+			return
+		self._event_service.record_experiment_event(experiment_id, event_name, variant_key, value)
 	
-	def record_code_error(self, flag_id, variation_key):
-		if flag_id and variation_key:
-			self._event_service.add_code_bugs_count(flag_id, variation_key)
+	def record_code_error(self, fs_flag, fs_user):
+		variant_key = self._get_variant_key(fs_flag.flag_id, fs_user.user_id, fs_user.attributes)
+		self._event_service.add_code_bugs_count(fs_flag.flag_id, variant_key)
 	
 	def _get_variant(self, flagId, userId, attributes, defaultVariant):
 		try:
@@ -63,6 +75,14 @@ class FlagsenseService:
 			self._event_service.add_evaluation_count(flagId, defaultVariant['key'] if defaultVariant['key'] else 'default')
 			self._event_service.add_errors_count(flagId)
 			return defaultVariant
+
+	def _get_variant_key(self, flagId, userId, attributes):
+		try:
+			if self._lastUpdatedOn == 0:
+				raise FlagsenseError('Loading data')
+			return self._user_variant_service.evaluate(userId, attributes, flagId)['key']
+		except Exception as err:
+			return ''
 	
 	def _start_data_poller(self):
 		self._polling_thread = threading.Thread(target=self._run)
@@ -106,7 +126,8 @@ class FlagsenseService:
 		
 		jsonResponse = response.json()
 		
-		if 'lastUpdatedOn' in jsonResponse and 'segments' in jsonResponse and 'flags' in jsonResponse:
+		if 'lastUpdatedOn' in jsonResponse and 'segments' in jsonResponse and 'flags' in jsonResponse and 'experiments' in jsonResponse:
 			self._data['segments'] = jsonResponse['segments']
 			self._data['flags'] = jsonResponse['flags']
+			self._data['experiments'] = jsonResponse['experiments']
 			self._lastUpdatedOn = jsonResponse['lastUpdatedOn']

@@ -106,7 +106,7 @@ class EventService:
 			# print(err)
 			pass
 
-	def record_experiment_event(self, experimentId, eventName, variantKey, value):
+	def record_experiment_event(self, flagId, eventName, variantKey, value):
 		try:
 			if not Constants.CAPTURE_EVENTS_FLAG:
 				return
@@ -122,21 +122,21 @@ class EventService:
 				'maximum': value
 			}
 
-			if experimentId in self._experimentEvents:
-				if eventName in self._experimentEvents[experimentId]:
-					if variantKey in self._experimentEvents[experimentId][eventName]:
-						metricsMap = self._experimentEvents[experimentId][eventName][variantKey]
+			if flagId in self._experimentEvents:
+				if eventName in self._experimentEvents[flagId]:
+					if variantKey in self._experimentEvents[flagId][eventName]:
+						metricsMap = self._experimentEvents[flagId][eventName][variantKey]
 						metricsMap['count'] = metricsMap['count'] + 1
 						metricsMap['total'] = metricsMap['total'] + value
 						metricsMap['minimum'] = min(metricsMap['minimum'], value)
 						metricsMap['maximum'] = max(metricsMap['maximum'], value)
-					self._experimentEvents[experimentId][eventName][variantKey] = metricsMap
+					self._experimentEvents[flagId][eventName][variantKey] = metricsMap
 				else:
-					self._experimentEvents[experimentId][eventName] = {
+					self._experimentEvents[flagId][eventName] = {
 						variantKey: metricsMap
 					}
 			else:
-				self._experimentEvents[experimentId] = {
+				self._experimentEvents[flagId] = {
 					eventName: {
 						variantKey: metricsMap
 					}

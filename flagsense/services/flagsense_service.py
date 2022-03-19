@@ -48,16 +48,16 @@ class FlagsenseService:
 		})
 		return FSVariation(variant['key'], variant['value'])
 
-	def record_event(self, fs_user, experiment_id, event_name, value=1):
-		if not experiment_id or not event_name or self._lastUpdatedOn == 0 or experiment_id not in self._data['experiments']:
+	def record_event(self, fs_user, flag_id, event_name, value=1):
+		if not flag_id or not event_name or self._lastUpdatedOn == 0 or flag_id not in self._data['experiments']:
 			return
-		experiment = self._data['experiments'][experiment_id]
+		experiment = self._data['experiments'][flag_id]
 		if event_name not in experiment['eventNames']:
 			return
-		variant_key = self._get_variant_key(experiment['flagId'], fs_user.user_id, fs_user.attributes)
+		variant_key = self._get_variant_key(flag_id, fs_user.user_id, fs_user.attributes)
 		if variant_key == '':
 			return
-		self._event_service.record_experiment_event(experiment_id, event_name, variant_key, value)
+		self._event_service.record_experiment_event(flag_id, event_name, variant_key, value)
 	
 	def record_code_error(self, fs_flag, fs_user):
 		variant_key = self._get_variant_key(fs_flag.flag_id, fs_user.user_id, fs_user.attributes)

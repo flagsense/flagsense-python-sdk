@@ -15,6 +15,7 @@ class FlagsenseService:
 			raise FlagsenseError('Empty sdk params not allowed')
 		
 		self._lastUpdatedOn = 0
+		self._maxInitializationWaitTime = Constants.MAX_INITIALIZATION_WAIT_TIME
 		self._environment = environment
 		if not environment or environment not in Constants.ENVIRONMENTS:
 			self._environment = 'PROD'
@@ -39,7 +40,10 @@ class FlagsenseService:
 		return self._lastUpdatedOn > 0
 	
 	def wait_for_initialization_complete(self):
-		Utility.wait_until(self.initialization_complete)
+		Utility.wait_until_with_timeout(self.initialization_complete, self._maxInitializationWaitTime)
+
+	def set_max_initialization_wait_time(self, time_in_seconds):
+		self._maxInitializationWaitTime = time_in_seconds
 	
 	def get_variation(self, fs_flag, fs_user):
 		variant = self._get_variant(fs_flag.flag_id, fs_user.user_id, fs_user.attributes, {

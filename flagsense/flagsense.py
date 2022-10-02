@@ -23,5 +23,5 @@ def flag(flagId, defaultKey=None, defaultValue=None):
 # initialization_complete()
 # wait_for_initialization_complete()
 # get_variation(fs_flag, fs_user)
-# record_event(fs_user, flag_id, event_name, value)
+# record_event(fs_flag, fs_user, event_name, value)
 # set_max_initialization_wait_time(time_in_seconds)

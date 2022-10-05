@@ -15,6 +15,7 @@ class FlagsenseService:
 			raise FlagsenseError('Empty sdk params not allowed')
 		
 		self._lastUpdatedOn = 0
+		self._maxInitializationWaitTime = Constants.MAX_INITIALIZATION_WAIT_TIME
 		self._environment = environment
 		if not environment or environment not in Constants.ENVIRONMENTS:
 			self._environment = 'PROD'
@@ -39,7 +40,10 @@ class FlagsenseService:
 		return self._lastUpdatedOn > 0
 	
 	def wait_for_initialization_complete(self):
-		Utility.wait_until(self.initialization_complete)
+		Utility.wait_until_with_timeout(self.initialization_complete, self._maxInitializationWaitTime)
+
+	def set_max_initialization_wait_time(self, time_in_seconds):
+		self._maxInitializationWaitTime = time_in_seconds
 	
 	def get_variation(self, fs_flag, fs_user):
 		variant = self._get_variant(fs_flag.flag_id, fs_user.user_id, fs_user.attributes, {
@@ -48,19 +52,19 @@ class FlagsenseService:
 		})
 		return FSVariation(variant['key'], variant['value'])
 
-	def record_event(self, fs_user, experiment_id, event_name, value=1):
-		if not experiment_id or not event_name or self._lastUpdatedOn == 0 or experiment_id not in self._data['experiments']:
+	def record_event(self, fs_flag, fs_user, event_name, value=1):
+		if not fs_flag or not fs_flag.flag_id or not event_name or self._lastUpdatedOn == 0 or fs_flag.flag_id not in self._data['experiments']:
 			return
-		experiment = self._data['experiments'][experiment_id]
+		experiment = self._data['experiments'][fs_flag.flag_id]
 		if event_name not in experiment['eventNames']:
 			return
-		variant_key = self._get_variant_key(experiment['flagId'], fs_user.user_id, fs_user.attributes)
+		variant_key = self._get_variant_key(fs_flag.flag_id, fs_user, fs_flag.default_key)
 		if variant_key == '':
 			return
-		self._event_service.record_experiment_event(experiment_id, event_name, variant_key, value)
+		self._event_service.record_experiment_event(fs_flag.flag_id, event_name, variant_key, value)
 	
 	def record_code_error(self, fs_flag, fs_user):
-		variant_key = self._get_variant_key(fs_flag.flag_id, fs_user.user_id, fs_user.attributes)
+		variant_key = self._get_variant_key(fs_flag.flag_id, fs_user, fs_flag.default_key)
 		self._event_service.add_code_bugs_count(fs_flag.flag_id, variant_key)
 	
 	def _get_variant(self, flagId, userId, attributes, defaultVariant):
@@ -72,17 +76,17 @@ class FlagsenseService:
 			return variant
 		except Exception as err:
 			# print(err)
-			self._event_service.add_evaluation_count(flagId, defaultVariant['key'] if defaultVariant['key'] else 'default')
+			self._event_service.add_evaluation_count(flagId, defaultVariant['key'] if defaultVariant['key'] else 'FS_Empty')
 			self._event_service.add_errors_count(flagId)
 			return defaultVariant
 
-	def _get_variant_key(self, flagId, userId, attributes):
+	def _get_variant_key(self, flagId, fsUser, defaultVariantKey):
 		try:
 			if self._lastUpdatedOn == 0:
 				raise FlagsenseError('Loading data')
-			return self._user_variant_service.evaluate(userId, attributes, flagId)['key']
+			return self._user_variant_service.evaluate(fsUser.userId, fsUser.attributes, flagId)['key']
 		except Exception as err:
-			return ''
+			return defaultVariantKey if defaultVariantKey else 'FS_Empty'
 	
 	def _start_data_poller(self):
 		self._polling_thread = threading.Thread(target=self._run)

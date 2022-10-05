@@ -14,7 +14,7 @@ class Utility:
 			time.sleep(period)
 	
 	@staticmethod
-	def wait_until_with_timeout(condition, period=0.5, timeout=10):
+	def wait_until_with_timeout(condition, timeout, period=0.5):
 		mustEndAt = time.time() + timeout
 		while time.time() < mustEndAt:
 			if condition():
